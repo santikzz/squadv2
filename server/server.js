@@ -3,6 +3,10 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const db = require('./config/db');
 
+// google OAuth
+const { OAuth2Client } = require('google-auth-library');
+const oauth2Client = new OAuth2Client()
+
 dotenv.config();
 db.connect();
 
@@ -11,10 +15,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
+
+
+
+
 app.use('/api/v2/users', require('./user/userRoutes'));
 
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[*] Server is running on port ${PORT}`);
 });
