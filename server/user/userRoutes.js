@@ -5,6 +5,7 @@ const {
     getAll,
     getById,
     registerUser,
+    loginUser,
 } = require('./userController');
 
 // GET all users
@@ -15,5 +16,8 @@ router.get('/:id', authMiddleware, getById);
 
 // POST register user
 router.post('/register', registerUser);
+
+// POST user login
+router.post('/login', loginUser);
 
 module.exports = router;

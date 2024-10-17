@@ -1,5 +1,6 @@
 const User = require('./userModel');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -43,10 +44,43 @@ const registerUser = async (req, res) => {
             name,
             surname,
             email,
-            password: hashedPassword,
+            password_hash: hashedPassword,
         });
 
         res.status(201).json({ message: 'User registered successfully' });
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+// @desc    User login
+// @route   POST /api/users/login
+// @access  Public
+const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
+
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '30 days' });
+
+        res.status(200).json({
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                surname: user.surname,
+            },
+        });
 
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -82,4 +116,4 @@ const updateUser = async (req, res) => {
     }
 }
 
-module.exports = { getAll, getById, registerUser, updateUser }
+module.exports = { getAll, getById, registerUser, updateUser, loginUser }
