@@ -21,7 +21,11 @@ const UserSchema = new mongoose.Schema({
     },
     about: {
         type: String,
-        default: '',
+        default: null,
+    },
+    image_url: {
+        type: String,
+        default: null,
     },
     password_hash: {
         type: String,

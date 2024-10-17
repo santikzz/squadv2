@@ -62,7 +62,8 @@ app.get('/dashboard', (req, res) => {
   res.send(`Hello ${req.user.name}, welcome to your dashboard!`);
 });
 
-// app.use('/api/v2/users', require('./user/userRoutes'));
+app.use('/api/users', require('./user/userRoutes'));
+app.use('/api/groups', require('./group/groupRoutes'));
 
 
 const PORT = process.env.PORT || 3000;

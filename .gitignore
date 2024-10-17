@@ -27,3 +27,5 @@ dist-ssr
 build/
 logs/
 debug.log
+
+google_auth_response.txt

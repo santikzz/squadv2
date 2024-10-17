@@ -30,7 +30,17 @@ const GroupSchema = new mongoose.Schema({
     members: [{
         type: Schema.Types.ObjectId,
         ref: 'User',
-    }]
+    }],
+    join_requests: [{
+        userId: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+        },
+        requestedAt: {
+            type: Date,
+            default: Date.now,
+        },
+    }],
 }, {
     timestamps: true,
 });
