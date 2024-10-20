@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/auth');
 const {
     getAll,
     getById,
+    getBySearch,
     createGroup,
     updateGroup,
     deleteGroup,
@@ -18,6 +19,9 @@ router.get('/', authMiddleware, getAll);
 
 // GET group by id
 router.get('/:id', authMiddleware, getById);
+
+// GET search and sort groups
+router.get('/search', authMiddleware, getBySearch);
 
 // POST create group
 router.post('/', authMiddleware, createGroup);

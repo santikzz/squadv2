@@ -29,32 +29,32 @@ app.use(passport.session());
 
 // ======================= ROUTES ======================= //
 
-app.get(
-  '/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+// app.get(
+//   '/auth/google',
+//   passport.authenticate('google', { scope: ['profile', 'email'] })
+// );
 
-app.get(
-  '/auth/google/redirect',
-  passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => {
-    // Successful authentication, redirect to your app
-    res.redirect('/dashboard');
-  }
-);
+// app.get(
+//   '/auth/google/redirect',
+//   passport.authenticate('google', { failureRedirect: '/' }),
+//   (req, res) => {
+//     // Successful authentication, redirect to your app
+//     res.redirect('/dashboard');
+//   }
+// );
 
-// Logout Route
-app.get('/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-    res.redirect('/');
-  });
-});
+// // Logout Route
+// app.get('/logout', (req, res) => {
+//   req.logout((err) => {
+//     if (err) {
+//       return next(err);
+//     }
+//     res.redirect('/');
+//   });
+// });
 
 app.get('/', (req, res) => {
-  res.send('<a href="auth/google">Authenticate with google</a>')
+  res.send('<a href="api/users/auth/google">Authenticate with google</a>')
 });
 
 // Simple Route to Check if Logged In

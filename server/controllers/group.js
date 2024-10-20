@@ -1,4 +1,5 @@
 const Group = require('../models/group');
+const { body, validationResult } = require('express-validator');
 
 // @desc    Get all groups
 // @route   GET /api/groups
@@ -24,52 +25,107 @@ const getById = async (req, res) => {
     }
 }
 
-// @desc    Create group
-// @route   POST /api/groups
+// @desc    Search and sort groups
+// @route   GET /api/groups/search
 // @access  Private
-const createGroup = async (req, res) => {
+const getBySearch = async (req, res) => {
     try {
-        const { title, description, privacy, max_members } = req.body;
-        const group = new Group({
-            owner: req.userId,
-            title,
-            description,
-            privacy: privacy || 'public',
-            max_members: max_members || null,
-            members: [req.userId]
-        });
-        await group.save();
-        res.status(201).json(group);
+
+        const { search = '', sortBy = 'createdAt', order = 'desc' } = req.query;
+
+        const searchQuery = search ? {
+            $or: [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+            ],
+        } : {};
+
+        const sortOptions = {};
+        if (sortBy === 'createdAt') {
+            sortOptions.createdAt = order === 'desc' ? -1 : 1;
+        } else if (sortBy === 'privacy') {
+            sortOptions.privacy = order === 'desc' ? -1 : 1;
+        } else if (sortBy === 'max_members') {
+            sortOptions.max_members = order === 'desc' ? -1 : 1;
+        }
+
+        const groups = await Group.find(searchQuery).sort(sortOptions);
+        res.status(200).json(groups);
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 }
+
+// @desc    Create group
+// @route   POST /api/groups
+// @access  Private
+const createGroup = [
+
+    body('title').isString().trim().notEmpty(),
+    body('description').isString().trim().notEmpty(),
+    body('privacy').optional().isIn(['public', 'private']).withMessage('privacy must be either "public" or "private"'),
+    body('max_members').optional().isInt({ min: 2, max: 50 }).toInt().withMessage('max_members must be a number between 2 and 50'),
+
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        try {
+            const { title, description, privacy, max_members } = req.body;
+            const group = new Group({
+                owner: req.userId,
+                title,
+                description,
+                privacy: privacy || 'public',
+                max_members: max_members || null,
+                members: [req.userId]
+            });
+            await group.save();
+            res.status(201).json(group);
+        } catch (err) {
+            res.status(500).json({ message: err.message });
+        }
+    }
+];
 
 // @desc    Update group
 // @route   PUT /api/groups/:id
 // @access  Private
-const updateGroup = async (req, res) => {
-    try {
-        const groupId = req.params.id;
-        const { title, description, privacy, max_members } = req.body;
-        const group = await Group.findById(groupId);
-        if (!group) {
-            return res.status(404).json({ message: 'Group not found' });
-        }
-        if (group.owner.toString() !== req.userId) {
-            return res.status(403).json({ message: 'You are not authorized to update this group' });
-        }
-        group.title = title || group.title;
-        group.description = description || group.description;
-        group.privacy = privacy || group.privacy;
-        group.max_members = max_members !== undefined ? max_members : group.max_members;
-        await group.save();
-        res.status(200).json(group);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-}
+const updateGroup = [
 
+    body('title').optional().isString().trim().notEmpty().isLength({ max: 64 }).withMessage('title must not exceed 64 characters'),
+    body('description').optional().isString().trim().notEmpty().isLength({ max: 512 }).withMessage('description must not exceed 512 characters'),
+    body('privacy').optional().isIn(['public', 'private']).withMessage('privacy must be either "public" or "private"'),
+    body('max_members').optional().isInt({ min: 2, max: 50 }).toInt().withMessage('max_members must be a number between 2 and 50'),
+
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        try {
+            const groupId = req.params.id;
+            const { title, description, privacy, max_members } = req.body;
+            const group = await Group.findById(groupId);
+            if (!group) {
+                return res.status(404).json({ message: 'Group not found' });
+            }
+            if (group.owner.toString() !== req.userId) {
+                return res.status(403).json({ message: 'You are not authorized to update this group' });
+            }
+            group.title = title || group.title;
+            group.description = description || group.description;
+            group.privacy = privacy || group.privacy;
+            group.max_members = max_members !== undefined ? max_members : group.max_members;
+            await group.save();
+            res.status(200).json(group);
+        } catch (err) {
+            res.status(500).json({ message: err.message });
+        }
+    }
+]
 // @desc    Delete group
 // @route   DELETE /api/groups/:id
 // @access  Private
@@ -227,7 +283,7 @@ const kickMember = async (req, res) => {
     try {
         const groupId = req.params.id;
         const userId = req.userId;
-        const userIdtoKick = req.body.userId;
+        const userIdToKick = req.body.userId;
 
         const group = await Group.findById(groupId);
 
@@ -258,4 +314,4 @@ const kickMember = async (req, res) => {
     }
 }
 
-module.exports = { getAll, getById, createGroup, updateGroup, deleteGroup, joinGroup, manageJoinRequest, leaveGroup, kickMember }
+module.exports = { getAll, getById, getBySearch, createGroup, updateGroup, deleteGroup, joinGroup, manageJoinRequest, leaveGroup, kickMember }

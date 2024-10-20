@@ -4,18 +4,20 @@ const Schema = mongoose.Schema;
 const GroupSchema = new mongoose.Schema({
     owner: {
         type: Schema.Types.ObjectId,
-        ref: 'User',                        // reference to user model
+        ref: 'User',
         required: true,
     },
     title: {
         type: String,
         required: true,
-        trim: true,                        // remove extra spaces
+        trim: true,
+        maxlength: [64, 'title must not exceed 64 characters'],
     },
     description: {
         type: String,
         required: true,
         trim: true,
+        maxlength: [512, 'description must not exceed 512 characters'],
     },
     privacy: {
         type: String,
@@ -26,7 +28,7 @@ const GroupSchema = new mongoose.Schema({
     max_members: {
         type: Number,
         default: null,
-        max: 100,
+        max: 50,
     },
     members: [{
         type: Schema.Types.ObjectId,
