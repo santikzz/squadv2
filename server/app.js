@@ -2,11 +2,14 @@ const express = require('express');
 const passport = require('passport');
 const session = require('express-session');
 const cors = require('cors');
-const dotenv = require('dotenv');
+// const dotenv = require('dotenv');
+
+const config = require('./config');
+
 const db = require('./config/db');
 require('./utils/passport');
 
-dotenv.config();
+// dotenv.config();
 const app = express();
 db.connect();
 app.use(cors());
@@ -14,7 +17,7 @@ app.use(express.json());
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
   })
@@ -62,11 +65,9 @@ app.get('/dashboard', (req, res) => {
   res.send(`Hello ${req.user.name}, welcome to your dashboard!`);
 });
 
-app.use('/api/users', require('./user/userRoutes'));
-app.use('/api/groups', require('./group/groupRoutes'));
+app.use('/api/users', require('./routes/user'));
+app.use('/api/groups', require('./routes/group'));
 
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`[*] Server is running on port ${PORT}`);
+app.listen(config.port, () => {
+  console.log(`[*] Server is running on port ${config.port}`);
 });

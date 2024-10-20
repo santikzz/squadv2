@@ -1,6 +1,7 @@
-const User = require('./userModel');
+const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const config = require('../config');
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -19,7 +20,7 @@ const getAll = async (req, res) => {
 // @access  Private
 const getById = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user = await User.findById(req.params.id);
         res.status(200).json(user);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -40,13 +41,13 @@ const registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = new User.save({
+        const user = new User({
             name,
             surname,
             email,
             password_hash: hashedPassword,
         });
-
+        await user.save();
         res.status(201).json({ message: 'User registered successfully' });
 
     } catch (err) {
@@ -71,7 +72,7 @@ const loginUser = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '30 days' });
+        const token = jwt.sign({ userId: user._id }, config.jwtSecret, { expiresIn: '30 days' });
 
         res.status(200).json({
             token,

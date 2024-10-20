@@ -1,4 +1,4 @@
-const Group = require('./groupModel');
+const Group = require('../models/group');
 
 // @desc    Get all groups
 // @route   GET /api/groups
@@ -17,7 +17,7 @@ const getAll = async (req, res) => {
 // @access  Private
 const getById = async (req, res) => {
     try {
-        const group = await Group.findById(req.group.id);
+        const group = await Group.findById(req.params.id);
         res.status(200).json(group);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -30,13 +30,15 @@ const getById = async (req, res) => {
 const createGroup = async (req, res) => {
     try {
         const { title, description, privacy, max_members } = req.body;
-        const group = await Group.save({
+        const group = new Group({
             owner: req.userId,
             title,
             description,
             privacy: privacy || 'public',
             max_members: max_members || null,
+            members: [req.userId]
         });
+        await group.save();
         res.status(201).json(group);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -81,7 +83,7 @@ const deleteGroup = async (req, res) => {
         if (group.owner.toString() !== req.userId) {
             return res.status(403).json({ message: 'You are not authorized to update this group' });
         }
-        await group.remove();
+        await group.deleteOne();
         res.status(200).json({ message: 'Group deleted successfully' });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -113,7 +115,7 @@ const joinGroup = async (req, res) => {
         if (group.privacy === 'public') {
             group.members.push(userId);
             await group.save();
-            return res.status(200).json(group);
+            return res.status(200).json({ message: 'Join request sent' });
         }
 
         if (group.privacy === 'private') {
@@ -156,7 +158,8 @@ const manageJoinRequest = async (req, res) => {
             return res.status(403).json({ message: 'You are not authorized to manage join requests' });
         }
 
-        if (!group.join_requests.includes(userId)) {
+        const joinRequest = group.join_requests.find(request => request.userId.toString() === userId);
+        if (!joinRequest) {
             return res.status(400).json({ message: 'No join request from this user' });
         }
 
@@ -165,14 +168,14 @@ const manageJoinRequest = async (req, res) => {
                 return res.status(400).json({ message: 'Group is full' });
             }
             group.members.push(userId);
-            group.join_requests = group.join_requests.filter((reqId) => reqId.toString() !== userId);
+            group.join_requests = group.join_requests.filter((request) => request.userId.toString() !== userId);
             await group.save();
-            return res.status(200).json({ message: 'User added to the group', group });
+            return res.status(200).json({ message: 'User added to the group' });
 
         } else if (action === 'decline') {
-            group.join_requests = group.join_requests.filter((reqId) => reqId.toString() !== userId);
+            group.join_requests = group.join_requests.filter((request) => request.userId.toString() !== userId);
             await group.save();
-            return res.json({ message: 'Join request declined', group });
+            return res.json({ message: 'Join request declined' });
 
         } else {
             return res.status(400).json({ message: 'Invalid action' });
@@ -209,7 +212,7 @@ const leaveGroup = async (req, res) => {
 
         group.members.splice(memberIndex, 1); // remove the user from the members list
         await group.save();
-        res.status(200).json({ message: 'You have left the group', group });
+        res.status(200).json({ message: 'You have left the group' });
 
     } catch (err) {
         console.error(err);
@@ -247,7 +250,7 @@ const kickMember = async (req, res) => {
 
         group.members.splice(memberIndex, 1);
         await group.save();
-        res.json({ message: 'Member has been kicked from the group', group });
+        res.json({ message: 'Member has been kicked from the group' });
 
     } catch (err) {
         console.error(err);

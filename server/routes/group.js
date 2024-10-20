@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/auth');
 const {
     getAll,
     getById,
@@ -11,7 +11,7 @@ const {
     manageJoinRequest,
     leaveGroup,
     kickMember
-} = require('./groupController');
+} = require('../controllers/group');
 
 // GET all groups
 router.get('/', authMiddleware, getAll);
