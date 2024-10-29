@@ -2,17 +2,19 @@ const express = require('express');
 const passport = require('passport');
 const session = require('express-session');
 const cors = require('cors');
-// const dotenv = require('dotenv');
-
 const config = require('./config');
-
 const db = require('./config/db');
 require('./utils/passport');
 
-// dotenv.config();
 const app = express();
 db.connect();
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'DELETE', 'PUT'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  // credentials: true,
+}));
+
 app.use(express.json());
 
 app.use(
@@ -29,42 +31,20 @@ app.use(passport.session());
 
 // ======================= ROUTES ======================= //
 
-// app.get(
-//   '/auth/google',
-//   passport.authenticate('google', { scope: ['profile', 'email'] })
-// );
 
-// app.get(
-//   '/auth/google/redirect',
-//   passport.authenticate('google', { failureRedirect: '/' }),
-//   (req, res) => {
-//     // Successful authentication, redirect to your app
-//     res.redirect('/dashboard');
-//   }
-// );
-
-// // Logout Route
-// app.get('/logout', (req, res) => {
-//   req.logout((err) => {
-//     if (err) {
-//       return next(err);
-//     }
-//     res.redirect('/');
-//   });
+// app.get('/', (req, res) => {
+//   res.send('<a href="auth/google">Authenticate with google</a>')
 // });
 
-app.get('/', (req, res) => {
-  res.send('<a href="api/users/auth/google">Authenticate with google</a>')
-});
+// app.get('/dashboard', (req, res) => {
+//   if (!req.isAuthenticated()) {
+//     return res.redirect('/');
+//   }
+//   res.send(`Hello ${req.user.name}, welcome to your dashboard!`);
+// });
 
-// Simple Route to Check if Logged In
-app.get('/dashboard', (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.redirect('/');
-  }
-  res.send(`Hello ${req.user.name}, welcome to your dashboard!`);
-});
-
+app.use('/auth', require('./routes/auth'));
+app.use('/api/environment', require('./routes/env'));
 app.use('/api/users', require('./routes/user'));
 app.use('/api/groups', require('./routes/group'));
 

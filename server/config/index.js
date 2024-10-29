@@ -12,6 +12,7 @@ const config = {
     },
     jwtSecret: process.env.JWT_SECRET,
     sessionSecret: process.env.SESSION_SECRET,
+    clientURL: process.env.CLIENT_URL,
 };
 
 module.exports = config;

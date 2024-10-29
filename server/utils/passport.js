@@ -9,22 +9,21 @@ passport.use(
             clientID: config.google.clientID,
             clientSecret: config.google.clientSecret,
             callbackURL: config.google.callbackURL,
+            scope: ['profile', 'email'],
         },
         async (accessToken, refreshToken, profile, done) => {
             // find or create a user in the database based on the Google profile
-            const existingUser = await User.findOne({ googleId: profile.id });
-            if (existingUser) {
-                return done(null, existingUser);
+            let user = await User.findOne({ googleId: profile.id });
+            if (!user) {
+                user = new User({
+                    googleId: profile.id,
+                    name: profile.displayName,
+                    surname: '',
+                    email: profile.emails[0].value,
+                });
+                await user.save();
             }
-            console.log(profile);
-            const newUser = new User({
-                googleId: profile.id,
-                name: profile.displayName,
-                surname: '',
-                email: profile.emails[0].value,
-            });
-            await newUser.save();
-            done(null, newUser);
+            done(null, user);
         }
     )
 );
@@ -32,6 +31,10 @@ passport.use(
 // serialize and deserialize user for session management
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {
-    const user = await User.findById(id);
-    done(null, user);
+    try {
+        const user = await User.findById(id);
+        done(null, user);
+    } catch (err) {
+        done(err, null);
+    }
 });

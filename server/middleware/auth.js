@@ -5,9 +5,9 @@ const User = require('../models/user');
 const authMiddleware = async (req, res, next) => {
 
     // check if user is authenticated via session (Google OAuth)
-    if (req.isAuthenticated && req.isAuthenticated()) {
-        return next(); // exit middleware early if authenticated
-    }
+    // if (req.isAuthenticated && req.isAuthenticated()) {
+    //     return next(); // exit middleware early if authenticated
+    // }
 
     // ==============================================================================================//
 

@@ -128,7 +128,7 @@ const loginUser = [
                 return res.status(400).json({ message: 'Invalid email or password' });
             }
 
-            const token = jwt.sign({ userId: user._id, token_version: user.token_version }, config.jwtSecret, { expiresIn: '30 days' });
+            const token = jwt.sign({ userId: user._id, token_version: user.token_version }, config.JWT_SECRET, { expiresIn: '30 days' });
 
             res.status(200).json({
                 token,
@@ -248,4 +248,16 @@ const resetPassword = [
     }
 ];
 
-module.exports = { getAll, getById, getBySearch, registerUser, updateUser, loginUser, resetPassword }
+
+// @desc    Get self authenticated user data
+// @route   POST /api/users/me
+// @access  Private
+const getSelfUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+module.exports = { getAll, getById, getBySearch, registerUser, updateUser, loginUser, resetPassword, getSelfUser }
