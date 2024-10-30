@@ -14,30 +14,36 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { AuthContext } from '@/context/AuthContext';
 import { squad_logo_black, squad_logo_white, squad_icon_256 } from "@/Assets"
 import LeftSheet from "@/components/LeftSheet";
+import NotificationPopover from "@/components/notifications/NotificationPopover";
+import { toAvatarFallback } from "../utils/utils";
 
 const Header = () => {
 
     const [isOpen, setIsOpen] = useState(false);
-    const { user } = useContext(AuthContext);
+    const { user, logout } = useContext(AuthContext);
 
     const navItems = [
         { icon: User, label: "Perfil", to: "/profile" },
         { icon: Settings, label: "Opciones", to: "/settings" },
-        { icon: LogOut, label: "Cerrar sesion", to: "/login" },
     ]
 
     const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login', { replace: true });
+    }
 
     const AvatarDropdownMenu = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer">
-                    <AvatarImage src="" alt="profile" />
-                    <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">AB</AvatarFallback>
+                    <AvatarImage src={user?.image_url} alt="profile" />
+                    <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">{toAvatarFallback(user?.name, user?.surname)}</AvatarFallback>
                 </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel>Santiago Bugnon</DropdownMenuLabel>
+                <DropdownMenuLabel>{user?.name} {user?.surname} {user?.surname}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     {navItems.map((item, index) => (
@@ -51,6 +57,14 @@ const Header = () => {
                             </button>
                         </DropdownMenuItem>
                     ))}
+                    <DropdownMenuItem>
+                        <button
+                            onClick={handleLogout}
+                            className="text-base flex flex-row items-center gap-2"
+                        >
+                            <LogOut size={16} />Cerrar sesion
+                        </button>
+                    </DropdownMenuItem>
                 </DropdownMenuGroup>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -60,8 +74,8 @@ const Header = () => {
         <Drawer>
             <DrawerTrigger>
                 <Avatar className="cursor-pointer">
-                    <AvatarImage src="" alt="profile" />
-                    <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">DA</AvatarFallback>
+                    <AvatarImage src={user?.image_url} alt="profile" />
+                    <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">{toAvatarFallback(user?.name, user?.surname)}</AvatarFallback>
                 </Avatar>
             </DrawerTrigger>
             <DrawerContent>
@@ -69,10 +83,10 @@ const Header = () => {
 
                     <div className="flex flex-row items-center gap-2">
                         <Avatar className="h-12 w-12">
-                            <AvatarImage src="" alt="profile" />
-                            <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">AB</AvatarFallback>
+                            <AvatarImage src={user?.image_url} alt="profile" />
+                            <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">{toAvatarFallback(user?.name, user?.surname)}</AvatarFallback>
                         </Avatar>
-                        <Label className="text-lg">Santiago Bugnon Francisco</Label>
+                        <Label className="text-lg">{user?.name} {user?.surname}</Label>
                     </div>
 
                     <div className="text-xl flex flex-row items-center justify-between gap-4">
@@ -91,11 +105,19 @@ const Header = () => {
                             <item.icon size={24} />{item.label}
                         </button>
                     ))}
+                    <button
+                        onClick={handleLogout}
+                        className="text-xl flex flex-row items-center gap-2"
+                    >
+                        <LogOut size={24} />Cerrar sesion
+                    </button>
 
                 </DrawerHeader>
             </DrawerContent>
         </Drawer>
     )
+
+
 
     return (
         <header className="flex items-center justify-between md:justify-between border-b px-4 py-3">
@@ -134,10 +156,10 @@ const Header = () => {
 
                 <button className="md:hidden"><Search size={24} /></button>
 
-                <Button className="hidden md:flex flex-row items-center bg-gradient text-white"><Plus size={24} /><Label className="text-base">Nuevo grupo</Label></Button>
-                <button className="md:hidden flex flex-row items-center md:bg-gradient text-white"><Plus size={24} /></button>
+                <Button className="hidden md:flex flex-row items-center bg-gradient text-white" onClick={() => { navigate('/create') }}><Plus size={24} /><Label className="text-base">Nuevo grupo</Label></Button>
+                <button className="md:hidden flex flex-row items-center md:bg-gradient dark:text-white text-black" onClick={() => { navigate('/create') }}><Plus size={24} /></button>
 
-                <button><Bell size={24} /></button>
+                <NotificationPopover />
 
                 <div className="items-center space-x-2 hidden md:flex">
                     <ModeToggle />
@@ -148,7 +170,7 @@ const Header = () => {
 
 
                 {/* <Avatar>
-                    <AvatarImage src="" alt="profile" />
+                    <AvatarImage src={user?.image_url} alt="profile" />
                     <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">AB</AvatarFallback>
                 </Avatar> */}
 

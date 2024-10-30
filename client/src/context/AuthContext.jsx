@@ -28,8 +28,15 @@ const AuthProvider = ({ children }) => {
         initalizateAuth();
     }, [])
 
+    const logout = () => {
+        setIsAuthenticated(false);
+        setUser(null);
+        api.setAuthToken(null);
+        localStorage.removeItem('token');
+    }
+
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, logout }}>
             {children}
         </AuthContext.Provider>
     );

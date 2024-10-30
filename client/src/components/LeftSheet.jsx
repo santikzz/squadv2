@@ -24,7 +24,7 @@ const LeftSheet = () => {
                         key={index}
                         onClick={() => { navigate(item.to) }}
                         variant="ghost"
-                        className={`inline-flex items-center gap-2.5 whitespace-nowrap w-full flex-row flex-nowrap justify-start text-lg px-3 py-2 rounded-lg ${location.pathname === item.to ? 'text-black dark:text-white bg-neutral-200 dark:bg-neutral-900 ' : 'text-black dark:text-neutral-300'}`}
+                        className={`inline-flex items-center gap-2.5 whitespace-nowrap w-full flex-row flex-nowrap justify-start text-lg px-3 py-2 rounded-lg`}
                     >
                         <item.icon size={24} />{item.label}
                     </button>

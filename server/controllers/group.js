@@ -6,7 +6,9 @@ const { body, validationResult } = require('express-validator');
 // @access  Private
 const getAll = async (req, res) => {
     try {
-        const groups = await Group.find();
+        const groups = await Group.find()
+            .select('owner title description max_members privacy members createdAt')
+            .populate('owner', 'name surname image_url');
         res.status(200).json(groups);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -18,8 +20,26 @@ const getAll = async (req, res) => {
 // @access  Private
 const getById = async (req, res) => {
     try {
-        const group = await Group.findById(req.params.id);
-        res.status(200).json(group);
+        const group = await Group.findById(req.params.id)
+            .select('owner title description max_members privacy members createdAt')
+            .populate('owner', 'name surname image_url')
+            .populate('members', 'name surname image_url');
+
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        const isOwner = group.owner._id.toString() === req.userId;
+        const isMember = group.members.some(member => member._id.toString() === req.userId);
+        const isFull = group.max_members >= group.members.length;
+
+        res.status(200).json({
+            ...group.toObject(),
+            is_owner: isOwner,
+            is_member: isMember,
+            is_full: isFull,
+        });
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -65,7 +85,7 @@ const createGroup = [
     body('title').isString().trim().notEmpty(),
     body('description').isString().trim().notEmpty(),
     body('privacy').optional().isIn(['public', 'private']).withMessage('privacy must be either "public" or "private"'),
-    body('max_members').optional().isInt({ min: 2, max: 50 }).toInt().withMessage('max_members must be a number between 2 and 50'),
+    body('max_members').optional().isInt({ min: 0, max: 50 }).toInt().withMessage('max_members must be a number between 0 and 50'),
 
     async (req, res) => {
         const errors = validationResult(req);

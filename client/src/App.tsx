@@ -2,13 +2,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from "@/components/theme-provider";
 import { useEffect, useState } from "react";
 
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "@/context/AuthContext";
 
+import ProtectedRoute from "@/components/protected-route";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
+import CreateGroupPage from "@/pages/CreateGroupPage";
+import NotificationsPage from "@/pages/NotificationsPage";
+import GroupPage from "@/pages/GroupPage";
 import GoogleAuth from "@/utils/GoogleAuth";
-import { Home } from "lucide-react";
-import ProtectedRoute from "@/components/protected-route";
 
 function App() {
 
@@ -21,6 +23,9 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth" element={<GoogleAuth />} />
+            <Route path="/create" element={<ProtectedRoute><CreateGroupPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/group/:groupId" element={<ProtectedRoute><GroupPage /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

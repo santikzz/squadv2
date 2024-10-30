@@ -9,6 +9,7 @@ require('./utils/passport');
 const app = express();
 db.connect();
 app.use(cors({
+  // origin: 'https://squadv2.xnebula.duckdns.org',
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'DELETE', 'PUT'],
   allowedHeaders: ['Content-Type', 'Authorization'],

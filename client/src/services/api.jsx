@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:3000';
+// const API_URL = 'https://squadv2-api.xnebula.duckdns.org';
 
 const axiosApi = axios.create({
     baseURL: API_URL,
@@ -41,6 +42,22 @@ const getGroups = async () => {
     return null;
 }
 
+const getGroup = async (groupId) => {
+    const response = await axiosApi.get(`/api/groups/${groupId}`);
+    if (response.status === 200) {
+        return response.data;
+    }
+    return null;
+}
+
+const createGroup = async (formData) => {
+    const response = await axiosApi.post(`/api/groups`, formData);
+    if (response.status === 200) {
+        return response.data;
+    }
+    return null;
+}
+
 const getUserSelf = async () => {
     const response = await axiosApi.get('/api/users/me');
     if (response.status === 200) {
@@ -57,6 +74,31 @@ const getEnvironmentFull = async () => {
     return null;
 }
 
+const leaveGroup = async (groupId) => {
+    const response = await axiosApi.post(`/api/groups/${groupId}/leave`);
+    if (response.status === 200) {
+        return response.data;
+    }
+    return null;
+}
+
+const joinGroup = async (groupId) => {
+    const response = await axiosApi.post(`/api/groups/${groupId}/join-request`);
+    if (response.status === 200) {
+        return response.data;
+    }
+    return null;
+}
+
 export const api = {
-    API_URL, setAuthToken, basicLogin, getGroups, getUserSelf, getEnvironmentFull
+    API_URL,
+    setAuthToken,
+    basicLogin,
+    getGroups,
+    getGroup,
+    createGroup,
+    getUserSelf,
+    getEnvironmentFull,
+    leaveGroup,
+    joinGroup,
 }
