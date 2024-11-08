@@ -1,12 +1,12 @@
 import { useContext } from 'react';
-import { AuthContext } from '@/context/AuthContext';
+import { GlobalContext } from '@/context/GlobalContext';
 import { Navigate } from 'react-router-dom';
 
 function ProtectedRoute({ children }) {
 
-    const { isAuthenticated } = useContext(AuthContext);
+    const { loading, isAuthenticated } = useContext(GlobalContext);
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !loading) {
         return <Navigate to="/login" replace />;
     }
 

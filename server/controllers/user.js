@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const Group = require('../models/group');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
@@ -52,7 +53,7 @@ const getBySearch = async (req, res) => {
 }
 
 // @desc    Register user
-// @route   POST /api/users/register
+// @route   POST /api/auth/register
 // @access  Public
 const registerUser = [
 
@@ -60,7 +61,7 @@ const registerUser = [
     body('surname').isString().trim().notEmpty().isLength({ max: 64 }).withMessage('surname must not exceed 48 characters'),
     body('email').trim().isEmail().withMessage('email must not exceed 64 characters'),
     body('password').isLength({ min: 6 }).withMessage('password must be at least 6 characters long'),
-    body('passwordConfirmation').custom((value, { req }) => {
+    body('password_confirmation').custom((value, { req }) => {
         if (value !== req.body.password) {
             throw new Error('passwords don\'t match');
         }
@@ -90,7 +91,11 @@ const registerUser = [
             });
             await user.save();
 
-            res.status(201).json({ message: 'User registered successfully' });
+            res.status(201).json({
+                name: user.name,
+                surname: user.surname,
+                email: user.email,
+            });
 
         } catch (err) {
             res.status(500).json({ message: err.message });
@@ -99,7 +104,7 @@ const registerUser = [
 ];
 
 // @desc    User login
-// @route   POST /api/users/login
+// @route   POST /api/auth/login
 // @access  Public
 const loginUser = [
 
@@ -128,7 +133,7 @@ const loginUser = [
                 return res.status(400).json({ message: 'Invalid email or password' });
             }
 
-            const token = jwt.sign({ userId: user._id, token_version: user.token_version }, config.JWT_SECRET, { expiresIn: '30 days' });
+            const token = jwt.sign({ userId: user._id, token_version: user.token_version }, config.jwtSecret, { expiresIn: '30 days' });
 
             res.status(200).json({
                 token,
@@ -152,7 +157,7 @@ const updateUser = [
 
     body('name').isString().trim().notEmpty().isLength({ max: 48 }).withMessage('name must not exceed 48 characters'),
     body('surname').isString().trim().notEmpty().isLength({ max: 64 }).withMessage('surname must not exceed 48 characters'),
-    body('about').isString().trim().notEmpty().isLength({ max: 256 }).withMessage('about must not exceed 256 characters'),
+    body('about').optional({ checkFalsy: true }).isString().trim().isLength({ max: 256 }).withMessage('about must not exceed 256 characters'),
 
     async (req, res) => {
         const errors = validationResult(req);
@@ -260,4 +265,70 @@ const getSelfUser = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 }
-module.exports = { getAll, getById, getBySearch, registerUser, updateUser, loginUser, resetPassword, getSelfUser }
+
+// @desc    Get a user's owned groups
+// @route   GET /api/users/:id/groups
+// @access  Private
+const getUserOwnedGroups = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const groups = await Group.find({ owner: userId })
+            .select('owner title description max_members privacy members createdAt')
+            .populate('owner', 'name surname image_url');
+
+        if (!groups) {
+            return res.status(404).json({ message: 'No groups found for this user' });
+        }
+
+        const _groups = groups.map((group) => {
+            const groupData = group.toObject();
+            delete groupData.members;
+
+            const totalMembers = group.members.length + 1;
+            return {
+                ...groupData,
+                total_members: totalMembers,
+            }
+        })
+
+        res.status(200).json(_groups);
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+// @desc    Get self user owned & joined groups
+// @route   GET /api/users/me/groups
+// @access  Private
+const getSelfGroups = async (req, res) => {
+    try {
+
+        const userId = req.userId;
+
+        const ownedGroups = await Group.find({ owner: userId })
+            .select('title')
+
+        const joinedGroups = await Group.find({ owner: { $ne: userId }, members: userId })
+            .select('title')
+
+        res.status(200).json([...ownedGroups, ...joinedGroups]);
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+
+module.exports = {
+    getAll,
+    getById,
+    getBySearch,
+    registerUser,
+    updateUser,
+    loginUser,
+    resetPassword,
+    getSelfUser,
+    getUserOwnedGroups,
+    getSelfGroups
+}

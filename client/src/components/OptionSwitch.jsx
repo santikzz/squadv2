@@ -27,14 +27,14 @@ const OptionSwitch = ({ value, onChange, optionA, optionB }) => {
                 onClick={selectOptionA}
                 className={`z-10 py-2 px-6 flex-1 transition-text duration-200 ease-in-out ${option ? 'text-white' : null}`}
             >
-                <label className='font-satoshi-medium text-base'>Abierto</label>
+                <label className='font-satoshi-medium text-base'>Publico</label>
             </button>
             <button
                 type="button"
                 onClick={selectOptionB}
                 className={`z-10 py-2 px-6 flex-1 transition-text duration-200 ease-in-out ${!option ? 'text-white' : null}`}
             >
-                <label className='font-satoshi-medium text-base'>Cerrado</label>
+                <label className='font-satoshi-medium text-base'>Privado</label>
             </button>
             <div className={`absolute ${option ? 'left-0' : 'translate-x-full'} bottom-0 h-full w-[50%] rounded-md bg-gradient flex-1 -z-10 transition-all duration-200 ease-in-out`} />
         </div>

@@ -5,47 +5,41 @@ import { useForm } from 'react-hook-form'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { toast } from 'sonner'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/ui/password-input'
 
+import { api } from '@/services/api'
 import { squad_logo_black, squad_logo_white, squad_icon_256, login_background } from "@/Assets"
-import { AuthContext } from '@/context/AuthContext';
-import { KeyRoundIcon, Lock, LogIn, Mail } from 'lucide-react'
+import { GlobalContext } from '@/context/GlobalContext';
+import { Lock, LogIn, Mail } from 'lucide-react'
 
 const formSchema = z.object({
-    email: z.string().email({ message: 'Invalid email address' }),
-    password: z
-        .string()
-        .min(6, { message: 'Password must be at least 6 characters long' })
-        .regex(/[a-zA-Z0-9]/, { message: 'Password must be alphanumeric' }),
+    email: z.string({ required_error: 'Ingrese su email' }).email({ message: 'Invalid email address' }),
+    password: z.string({ required_error: 'Ingrese su contraseña' })
 });
 
-export default function LoginScreen() {
+export default function LoginPage() {
 
-    const form = useForm({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            email: '',
-            password: '',
-        },
-    })
+    const { loading, login, isAuthenticated } = useContext(GlobalContext);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-    const onSubmit = async (values) => {
+    const form = useForm({ resolver: zodResolver(formSchema) })
+
+    const onSubmit = async (userdata) => {
+        setError(null);
         try {
-            // Assuming an async login function
-            console.log(values)
-            toast(
-                <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-                    <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-                </pre>,
-            )
-        } catch (error) {
-            console.error('Form submission error', error)
-            toast.error('Failed to submit the form. Please try again.')
+            const token = await api.basicLogin(userdata);
+            if (token) {
+                login(token)
+                navigate('/', { replace: true });
+            }
+        } catch (err) {
+            setError('Email y/o contraseña invalidos');
         }
+
     }
 
     const signInGoogle = () => {
@@ -53,10 +47,7 @@ export default function LoginScreen() {
         window.location.href = 'http://localhost:3000/auth/google';
     }
 
-    const { isAuthenticated } = useContext(AuthContext);
-    const navigate = useNavigate();
-
-    if (isAuthenticated) return <Navigate to="/" replace />
+    if (isAuthenticated && !loading) return <Navigate to="/" replace />
 
     return (
 
@@ -142,6 +133,7 @@ export default function LoginScreen() {
                                             </FormItem>
                                         )}
                                     />
+                                    {error && <Label className="text-red-500">{error}</Label>}
                                     <Button type="submit" className="w-full">
                                         <LogIn />
                                         Iniciar sesion

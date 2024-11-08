@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const config = {
     port: process.env.PORT || 3000,
+    socketPort: process.env.SOCKET_PORT || 3001,
     db: {
         mongoUri: process.env.MONGO_URI
     },

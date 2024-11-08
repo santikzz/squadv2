@@ -3,31 +3,28 @@ const toAvatarFallback = (strA, strB) => {
 };
 
 const formatTimeAgo = (timestamp) => {
-    const date = new Date(timestamp);
     const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-    let interval = Math.floor(seconds / 31536000);
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - time) / 1000);
 
-    if (interval > 1) {
-        return "Hace " + interval + " años";
+    if (diffInSeconds < 60) {
+        return "Hace unos segundos";
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `Hace ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `Hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+    } else if (diffInSeconds < 2592000) { // 30 days
+        const days = Math.floor(diffInSeconds / 86400);
+        return `Hace ${days} ${days === 1 ? 'día' : 'días'}`;
+    } else if (diffInSeconds < 31536000) { // 365 days
+        const months = Math.floor(diffInSeconds / 2592000); // Approximate month length
+        return `Hace ${months} ${months === 1 ? 'mes' : 'meses'}`;
+    } else {
+        const years = Math.floor(diffInSeconds / 31536000); // Approximate year length
+        return `Hace ${years} ${years === 1 ? 'año' : 'años'}`;
     }
-    interval = Math.floor(seconds / 2592000);
-    if (interval > 1) {
-        return "Hace " + interval + " meses";
-    }
-    interval = Math.floor(seconds / 86400);
-    if (interval > 1) {
-        return "Hace " + interval + " días";
-    }
-    interval = Math.floor(seconds / 3600);
-    if (interval > 1) {
-        return "Hace " + interval + " horas";
-    }
-    interval = Math.floor(seconds / 60);
-    if (interval > 1) {
-        return "Hace " + interval + " minutos";
-    }
-    return "Hace " + Math.floor(seconds) + " segundos";
 };
 
 const trimString = (str, maxLength) => {

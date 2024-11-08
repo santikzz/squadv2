@@ -1,22 +1,19 @@
-import { useState, useContext, useEffect } from "react"
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useState} from "react"
+import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from 'react-hook-form';
-
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Textarea } from "@/components/ui/textarea"
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
 import InputNumber from "@/components/InputNumber";
 import OptionSwitch from "@/components/OptionSwitch";
 import { api } from "@/services/api"
-import { AuthContext } from '@/context/AuthContext';
-import GroupCard from "@/components/GroupCard"
 import MainWrapper from "../components/MainWrapper"
-import { Plus } from "lucide-react";
+import ButtonLoader from "@/components/ButtonLoader";
 
 const FormSchema = z.object({
     title: z
@@ -52,12 +49,13 @@ export default function CreateGroupPage() {
     const onSubmit = async (formData) => {
         setCreating(true);
         const res = await api.createGroup(formData)
+        console.log(res);
         if (res !== null) {
-            setCreating(false);
             navigate(`/group/${res._id}`);
         } else {
-            console.log(res);
+            console.error(res);
         }
+        setCreating(false);
     };
 
     return (
@@ -158,11 +156,13 @@ export default function CreateGroupPage() {
 
                     <div className="w-full mt-16">
 
-                        {/* <ButtonLoader isLoading={creating} type="submit">
-                            <Plus /> Crear
-                        </ButtonLoader> */}
-
-                        <Button className="w-full h-10 text-white text-base bg-gradient"> <Plus size={20} /> Crear</Button>
+                        <ButtonLoader
+                            type="submit"
+                            isLoading={creating}
+                            loadingText='Crear'
+                            className="w-full h-10 text-white text-base bg-gradient">
+                            <Plus size={20} /> Crear
+                        </ButtonLoader>
 
                     </div>
                 </form>

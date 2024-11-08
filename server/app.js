@@ -5,15 +5,18 @@ const cors = require('cors');
 const config = require('./config');
 const db = require('./config/db');
 require('./utils/passport');
+const http = require('http');
+const setupApiRoutes = require('./routes');
+// const initChatSocket = require('./sockets/chat');
 
 const app = express();
+const server = http.createServer(app);
 db.connect();
+
 app.use(cors({
-  // origin: 'https://squadv2.xnebula.duckdns.org',
-  origin: 'http://localhost:5173',
+  origin: config.clientURL,
   methods: ['GET', 'POST', 'DELETE', 'PUT'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  // credentials: true,
 }));
 
 app.use(express.json());
@@ -29,25 +32,15 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// setup endpoints routes
+setupApiRoutes(app);
 
-// ======================= ROUTES ======================= //
+// initialize chat socket.io
+// initChatSocket(server);
 
-
-// app.get('/', (req, res) => {
-//   res.send('<a href="auth/google">Authenticate with google</a>')
+// server.listen(config.port, () => {
+//   console.log(`Server running on port ${config.port}`)
 // });
-
-// app.get('/dashboard', (req, res) => {
-//   if (!req.isAuthenticated()) {
-//     return res.redirect('/');
-//   }
-//   res.send(`Hello ${req.user.name}, welcome to your dashboard!`);
-// });
-
-app.use('/auth', require('./routes/auth'));
-app.use('/api/environment', require('./routes/env'));
-app.use('/api/users', require('./routes/user'));
-app.use('/api/groups', require('./routes/group'));
 
 app.listen(config.port, () => {
   console.log(`[*] Server is running on port ${config.port}`);

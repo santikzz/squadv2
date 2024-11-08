@@ -1,4 +1,5 @@
 const Group = require('../models/group');
+const Notification = require('../models/notification');
 const { body, validationResult } = require('express-validator');
 
 // @desc    Get all groups
@@ -6,53 +7,8 @@ const { body, validationResult } = require('express-validator');
 // @access  Private
 const getAll = async (req, res) => {
     try {
-        const groups = await Group.find()
-            .select('owner title description max_members privacy members createdAt')
-            .populate('owner', 'name surname image_url');
-        res.status(200).json(groups);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-}
-
-// @desc    Get group by ID
-// @route   GET /api/groups/:id
-// @access  Private
-const getById = async (req, res) => {
-    try {
-        const group = await Group.findById(req.params.id)
-            .select('owner title description max_members privacy members createdAt')
-            .populate('owner', 'name surname image_url')
-            .populate('members', 'name surname image_url');
-
-        if (!group) {
-            return res.status(404).json({ message: 'Group not found' });
-        }
-
-        const isOwner = group.owner._id.toString() === req.userId;
-        const isMember = group.members.some(member => member._id.toString() === req.userId);
-        const isFull = group.max_members >= group.members.length;
-
-        res.status(200).json({
-            ...group.toObject(),
-            is_owner: isOwner,
-            is_member: isMember,
-            is_full: isFull,
-        });
-
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-}
-
-// @desc    Search and sort groups
-// @route   GET /api/groups/search
-// @access  Private
-const getBySearch = async (req, res) => {
-    try {
 
         const { search = '', sortBy = 'createdAt', order = 'desc' } = req.query;
-
         const searchQuery = search ? {
             $or: [
                 { title: { $regex: search, $options: 'i' } },
@@ -69,8 +25,60 @@ const getBySearch = async (req, res) => {
             sortOptions.max_members = order === 'desc' ? -1 : 1;
         }
 
-        const groups = await Group.find(searchQuery).sort(sortOptions);
-        res.status(200).json(groups);
+        const groups = await Group.find(searchQuery)
+            .select('owner title description max_members privacy members createdAt')
+            .populate('owner', 'name surname image_url')
+            .sort(sortOptions);
+
+        const _groups = groups.map((group) => {
+            const groupData = group.toObject();
+            delete groupData.members;
+
+            const totalMembers = group.members.length + 1;
+            return {
+                ...groupData,
+                total_members: totalMembers,
+            }
+        })
+
+        res.status(200).json(_groups);
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+// @desc    Get group by ID
+// @route   GET /api/groups/:id
+// @access  Private
+const getById = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id)
+            .select('owner title description max_members privacy members createdAt join_requests')
+            .populate('owner', 'name surname image_url')
+            .populate('members', 'name surname image_url');
+
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        const isOwner = group.owner._id.toString() === req.userId;
+        const isMember = group.members.some(member => member._id.toString() === req.userId);
+        const totalMembers = group.members.length + 1;
+        const isFull = group.max_members !== null ? (totalMembers >= group.max_members) : false;
+        const hasRequest = group.join_requests.some(request => request.userId.toString() === req.userId);
+
+        const groupData = group.toObject();
+        delete groupData.join_requests;
+
+        res.status(200).json({
+            ...groupData,
+            is_owner: isOwner,
+            is_member: isMember,
+            is_full: isFull,
+            has_request: hasRequest,
+            total_members: totalMembers,
+        });
 
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -100,7 +108,7 @@ const createGroup = [
                 description,
                 privacy: privacy || 'public',
                 max_members: max_members || null,
-                members: [req.userId]
+                members: []
             });
             await group.save();
             res.status(201).json(group);
@@ -118,7 +126,7 @@ const updateGroup = [
     body('title').optional().isString().trim().notEmpty().isLength({ max: 64 }).withMessage('title must not exceed 64 characters'),
     body('description').optional().isString().trim().notEmpty().isLength({ max: 512 }).withMessage('description must not exceed 512 characters'),
     body('privacy').optional().isIn(['public', 'private']).withMessage('privacy must be either "public" or "private"'),
-    body('max_members').optional().isInt({ min: 2, max: 50 }).toInt().withMessage('max_members must be a number between 2 and 50'),
+    body('max_members').optional().isInt({ min: 0, max: 50 }).toInt().withMessage('max_members must be a number between 0 and 50'),
 
     async (req, res) => {
         const errors = validationResult(req);
@@ -173,6 +181,7 @@ const joinGroup = async (req, res) => {
     try {
         const groupId = req.params.id;
         const userId = req.userId;
+        const { cancel_request } = req.body;
 
         const group = await Group.findById(groupId);
 
@@ -191,21 +200,47 @@ const joinGroup = async (req, res) => {
         if (group.privacy === 'public') {
             group.members.push(userId);
             await group.save();
+
+            const notification = new Notification({
+                type: 'new_member',
+                recipient: group.owner,
+                sender: userId,
+                groupId: groupId,
+            });
+            await notification.save();
+
             return res.status(200).json({ message: 'Join request sent' });
         }
 
         if (group.privacy === 'private') {
 
-            const existingRequest = group.join_requests.find(
+            const existingRequestIndex = group.join_requests.findIndex(
                 (request) => request.userId.toString() === userId
             );
 
-            if (existingRequest) {
+            if (existingRequestIndex !== -1) {
+
+                if (cancel_request) {
+                    group.join_requests.splice(existingRequestIndex, 1);
+                    await group.save();
+                    await Notification.findOneAndDelete({ recipient: group.owner, sender: userId, groupId: groupId, type: 'join_request' });
+                    return res.status(200).json({ message: 'Join request canceled' });
+                }
+
                 return res.status(400).json({ message: 'Join request already sent' });
             }
 
             group.join_requests.push({ userId, requestedAt: new Date() });
             await group.save();
+
+            const notification = new Notification({
+                type: 'join_request',
+                recipient: group.owner,
+                sender: userId,
+                groupId: groupId,
+            });
+            await notification.save();
+
             return res.status(200).json({ message: 'Join request sent to the group owner for approval' });
         }
 
@@ -246,16 +281,22 @@ const manageJoinRequest = async (req, res) => {
             group.members.push(userId);
             group.join_requests = group.join_requests.filter((request) => request.userId.toString() !== userId);
             await group.save();
+            await Notification.findOneAndDelete({ recipient: group.owner, sender: userId, groupId: groupId, type: 'join_request' });
+
             return res.status(200).json({ message: 'User added to the group' });
 
         } else if (action === 'decline') {
             group.join_requests = group.join_requests.filter((request) => request.userId.toString() !== userId);
             await group.save();
-            return res.json({ message: 'Join request declined' });
+
+            await Notification.findOneAndDelete({ recipient: group.owner, sender: userId, groupId: groupId, type: 'join_request' });
+            return res.status(200).json({ message: 'Join request declined' });
 
         } else {
             return res.status(400).json({ message: 'Invalid action' });
         }
+
+        
 
     } catch (err) {
         console.error(err);
@@ -334,4 +375,4 @@ const kickMember = async (req, res) => {
     }
 }
 
-module.exports = { getAll, getById, getBySearch, createGroup, updateGroup, deleteGroup, joinGroup, manageJoinRequest, leaveGroup, kickMember }
+module.exports = { getAll, getById, createGroup, updateGroup, deleteGroup, joinGroup, manageJoinRequest, leaveGroup, kickMember }
