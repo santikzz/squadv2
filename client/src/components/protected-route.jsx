@@ -6,7 +6,7 @@ function ProtectedRoute({ children }) {
 
     const { loading, isAuthenticated } = useContext(GlobalContext);
 
-    if (!isAuthenticated && !loading) {
+    if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
 

@@ -1,8 +1,10 @@
 import { useState, useContext, useEffect } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { io } from 'socket.io-client';
 import { Button } from "@/components/ui/button";
-import { SendHorizonal } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { SendHorizonal, Settings, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { api } from "@/services/api"
 import { GlobalContext } from '@/context/GlobalContext';
@@ -30,6 +32,7 @@ export default function ChatPage() {
     const { groupId } = useParams();
     const { isDesktop, user } = useContext(GlobalContext);
 
+    const [group, setGroup] = useState(null);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
 
@@ -44,14 +47,19 @@ export default function ChatPage() {
     }, [socket]);
 
     useEffect(() => {
+        setMessages([]);
+        const fetchGroup = async () => {
+            const res = await api.getGroup(groupId);
+            setGroup(res);
+        }
         const fetchMessages = async () => {
             const res = await api.getMessagesByGroupId(groupId);
             setMessages(res);
         }
+        fetchGroup();
         fetchMessages();
-        socket.emit("group_chat_join", user._id, groupId);
+        socket.emit("group_chat_join", { userId: user._id, groupId: groupId });
     }, [groupId]);
-
 
     const sendMessage = (e) => {
         e.preventDefault();
@@ -68,8 +76,16 @@ export default function ChatPage() {
 
     return (
         <MainWrapper className="dark:bg-neutral-900 bg-neutral-100 flex flex-col justify-between p-0">
-            <div className="w-full h-16 bg-neutral-950 border-b flex px-6 items-center">
-                #GroupHeader
+            <div className="w-full h-16 bg-white dark:bg-neutral-950 border-b flex px-6 items-center">
+                <Link className="font-bold text-base hover:underline flex flex-row items-center gap-2">
+                    <Avatar className="hover:cursor-pointer">
+                        <AvatarImage src="" alt="profile" />
+                        <AvatarFallback className="bg-gray-200 dark:bg-neutral-700">
+                            <Users className="text-gray-400 dark:text-neutral-500" />
+                        </AvatarFallback>
+                    </Avatar>
+                    {group?.title}
+                </Link>
             </div>
 
             <div className="flex-1 overflow-hidden relative pl-4">

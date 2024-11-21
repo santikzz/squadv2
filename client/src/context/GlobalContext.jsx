@@ -10,6 +10,7 @@ const GlobalProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [ownedJoinedGroups, setOwnedJoinedGroups] = useState(null)
 
     const isDesktop = useMediaQuery("(min-width: 768px)")
 
@@ -21,6 +22,7 @@ const GlobalProvider = ({ children }) => {
             }
         }
         initalizateAuth();
+        setLoading(false);
     }, [])
 
     const login = async (token) => {
@@ -28,26 +30,29 @@ const GlobalProvider = ({ children }) => {
         setIsAuthenticated(true);
         api.setAuthToken(token);
         try {
-            const userData = await api.getEnvironmentFull();
-            setUser(userData);
+            const environment = await api.getEnvironmentFull();
+            setUser(environment.user);
+            setOwnedJoinedGroups(environment.groups);
         } catch (error) {
             console.error(error);
             localStorage.removeItem('token');
             api.setAuthToken(null);
             setIsAuthenticated(false);
         }
-        setLoading(false);
     }
 
     const logout = () => {
         setIsAuthenticated(false);
         setUser(null);
+        setOwnedJoinedGroups(null);
         api.setAuthToken(null);
         localStorage.removeItem('token');
     }
 
+    if (loading) return <div>loading...</div>;
+
     return (
-        <GlobalContext.Provider value={{ loading, user, isAuthenticated, login, logout, isDesktop, search, setSearch }}>
+        <GlobalContext.Provider value={{ loading, user, ownedJoinedGroups, setOwnedJoinedGroups, isAuthenticated, login, logout, isDesktop, search, setSearch }}>
             {children}
         </GlobalContext.Provider>
     );

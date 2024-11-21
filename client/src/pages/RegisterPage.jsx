@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Progress } from "@/components/ui/progress"
+import PasswordInputStrength from "@/components/PasswordInputStrength"
 
 import { api } from '@/services/api'
 import { squad_logo_black, squad_logo_white, squad_icon_256, login_background } from "@/Assets"
@@ -139,12 +140,14 @@ export default function RegisterPage() {
                                                             </FormLabel>
                                                         </div>
                                                         <FormControl>
-                                                            <PasswordInput
+
+                                                            <PasswordInputStrength
                                                                 id="password"
                                                                 placeholder="******"
                                                                 autoComplete="password"
                                                                 {...field}
                                                             />
+
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>

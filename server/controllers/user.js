@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { body, validationResult } = require('express-validator');
+const { getUnreadCount } = require('../controllers/message');
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -298,27 +299,6 @@ const getUserOwnedGroups = async (req, res) => {
     }
 }
 
-// @desc    Get self user owned & joined groups
-// @route   GET /api/users/me/groups
-// @access  Private
-const getSelfGroups = async (req, res) => {
-    try {
-
-        const userId = req.userId;
-
-        const ownedGroups = await Group.find({ owner: userId })
-            .select('title')
-
-        const joinedGroups = await Group.find({ owner: { $ne: userId }, members: userId })
-            .select('title')
-
-        res.status(200).json([...ownedGroups, ...joinedGroups]);
-
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-}
-
 
 module.exports = {
     getAll,
@@ -330,5 +310,4 @@ module.exports = {
     resetPassword,
     getSelfUser,
     getUserOwnedGroups,
-    getSelfGroups
 }

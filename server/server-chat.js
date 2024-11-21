@@ -11,6 +11,8 @@ const initChatSocket = require('./sockets/chat');
 
 // const app = express();
 const server = http.createServer();
+// server.disable("x-powered-by");
+
 db.connect();
 
 // app.use(cors({

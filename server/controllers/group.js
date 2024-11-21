@@ -1,6 +1,7 @@
 const Group = require('../models/group');
 const Notification = require('../models/notification');
 const { body, validationResult } = require('express-validator');
+const { getUnreadCount } = require('./message');
 
 // @desc    Get all groups
 // @route   GET /api/groups
@@ -296,7 +297,7 @@ const manageJoinRequest = async (req, res) => {
             return res.status(400).json({ message: 'Invalid action' });
         }
 
-        
+
 
     } catch (err) {
         console.error(err);
@@ -375,4 +376,43 @@ const kickMember = async (req, res) => {
     }
 }
 
-module.exports = { getAll, getById, createGroup, updateGroup, deleteGroup, joinGroup, manageJoinRequest, leaveGroup, kickMember }
+// @desc    Get self user owned & joined groups
+// @route   GET /api/groups/me
+// @access  Private
+const getOwnedAndJoinedGroups = async (userId) => {
+    try {
+
+        const ownedGroups = await Group.find({ owner: userId }).select('title');
+        const joinedGroups = await Group.find({ owner: { $ne: userId }, members: userId }).select('title');
+
+        const _ownedGroups = await Promise.all(
+            ownedGroups.map(async (group) => {
+                const groupData = group.toObject();
+                const unreadCount = await getUnreadCount(groupData._id, userId);
+                return {
+                    ...groupData,
+                    unread_messages: unreadCount,
+                };
+            })
+        );
+
+        const _joinedGroups = await Promise.all(
+            joinedGroups.map(async (group) => {
+                const groupData = group.toObject();
+                const unreadCount = await getUnreadCount(groupData._id, userId);
+                return {
+                    ...groupData,
+                    unread_messages: unreadCount,
+                };
+            })
+        );
+
+        return [..._ownedGroups, ..._joinedGroups];
+
+    } catch (err) {
+        console.error('Error fetching groups:', err);
+        return [];
+    }
+}
+
+module.exports = { getAll, getById, createGroup, updateGroup, deleteGroup, joinGroup, manageJoinRequest, leaveGroup, kickMember, getOwnedAndJoinedGroups }

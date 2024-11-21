@@ -11,15 +11,11 @@ const {
     resetPassword,
     getSelfUser,
     getUserOwnedGroups,
-    getSelfGroups
 } = require('../controllers/user');
-
 
 router.get('/', authMiddleware, getAll);
 
 router.get('/me', authMiddleware, getSelfUser);
-
-router.get('/me/groups', authMiddleware, getSelfGroups);
 
 router.get('/search', authMiddleware, getBySearch);
 

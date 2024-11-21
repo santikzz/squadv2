@@ -1,5 +1,6 @@
 const Message = require('../models/message');
 const Group = require('../models/group');
+const UserGroup = require('../models/user-group');
 
 const isMemberOf = async (groupId, userId) => {
     const group = await Group.findById(groupId).select('owner members');
@@ -53,7 +54,6 @@ const getMessagesByGroupId = async (req, res) => {
 
 const saveMessage = async (data) => {
     try {
-
         const { groupId, userId, content } = data;
 
         const isMember = await isMemberOf(groupId, userId);
@@ -78,5 +78,36 @@ const saveMessage = async (data) => {
     }
 }
 
+const updateLastRead = async (groupId, userId) => {
+    try {
+        
+        const userGroup = await UserGroup.findOneAndUpdate({ userId, groupId },
+            { lastRead: new Date() },
+            { upsert: true, new: true }
+        );
 
-module.exports = { getMessagesByGroupId, saveMessage }
+        return true;
+    } catch (err) {
+        return null;
+    }
+}
+
+const getUnreadCount = async (groupId, userId) => {
+    try {
+
+        const userGroup = await UserGroup.findOne({ userId, groupId });
+        const lastRead = userGroup ? userGroup.lastRead : null;
+
+        const unreadCount = await Message.countDocuments({
+            groupId,
+            createdAt: { $gt: lastRead || new Date(0) }
+        });
+
+        return unreadCount;
+
+    } catch (err) {
+        return 0;
+    }
+};
+
+module.exports = { getMessagesByGroupId, saveMessage, updateLastRead, getUnreadCount }

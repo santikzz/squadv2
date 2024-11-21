@@ -10,7 +10,7 @@ const {
     joinGroup,
     manageJoinRequest,
     leaveGroup,
-    kickMember
+    kickMember,
 } = require('../controllers/group');
 
 // GET all groups
@@ -39,5 +39,7 @@ router.post('/:id/leave', authMiddleware, leaveGroup);
 
 // POST owner kick member from group
 router.post('/:id/kick', authMiddleware, kickMember);
+
+// router.get('/me', authMiddleware, getOwnedAndJoinedGroups);
 
 module.exports = router;
